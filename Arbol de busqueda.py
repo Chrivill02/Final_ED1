@@ -3,9 +3,15 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPu
 from PyQt6.QtGui import QPainter, QPaintEvent, QFont
 from PyQt6.QtCore import Qt, QFile
 
+class Estudiante:
+    def __init__(self, id, nombre, carrera):
+        self.id = id
+        self.nombre = nombre
+        self.carrera = carrera
+
 class Nodo:
-    def __init__(self, valor):
-        self.valor = valor
+    def __init__(self, estudiante):
+        self.estudiante = estudiante
         self.izquierda = None
         self.derecha = None
 
@@ -13,43 +19,43 @@ class ArbolBusqueda:
     def __init__(self):
         self.raiz = None
 
-    def insertar(self, valor):
+    def insertar(self, estudiante):
         if self.raiz is None:
-            self.raiz = Nodo(valor)
+            self.raiz = Nodo(estudiante)
         else:
-            self._insertar_recursivo(self.raiz, valor)
+            self._insertar_recursivo(self.raiz, estudiante)
 
-    def _insertar_recursivo(self, nodo, valor):
-        if valor < nodo.valor:
+    def _insertar_recursivo(self, nodo, estudiante):
+        if estudiante.id < nodo.estudiante.id:
             if nodo.izquierda is None:
-                nodo.izquierda = Nodo(valor)
+                nodo.izquierda = Nodo(estudiante)
             else:
-                self._insertar_recursivo(nodo.izquierda, valor)
-        elif valor > nodo.valor:
+                self._insertar_recursivo(nodo.izquierda, estudiante)
+        elif estudiante.id > nodo.estudiante.id:
             if nodo.derecha is None:
-                nodo.derecha = Nodo(valor)
+                nodo.derecha = Nodo(estudiante)
             else:
-                self._insertar_recursivo(nodo.derecha, valor)
+                self._insertar_recursivo(nodo.derecha, estudiante)
 
-    def eliminar(self, valor):
-        self.raiz = self._eliminar_recursivo(self.raiz, valor)
+    def eliminar(self, id):
+        self.raiz = self._eliminar_recursivo(self.raiz, id)
 
-    def _eliminar_recursivo(self, nodo, valor):
+    def _eliminar_recursivo(self, nodo, id):
         if nodo is None:
             return nodo
 
-        if valor < nodo.valor:
-            nodo.izquierda = self._eliminar_recursivo(nodo.izquierda, valor)
-        elif valor > nodo.valor:
-            nodo.derecha = self._eliminar_recursivo(nodo.derecha, valor)
+        if id < nodo.estudiante.id:
+            nodo.izquierda = self._eliminar_recursivo(nodo.izquierda, id)
+        elif id > nodo.estudiante.id:
+            nodo.derecha = self._eliminar_recursivo(nodo.derecha, id)
         else:
             if nodo.izquierda is None:
                 return nodo.derecha
             elif nodo.derecha is None:
                 return nodo.izquierda
 
-            nodo.valor = self._encontrar_minimo(nodo.derecha).valor
-            nodo.derecha = self._eliminar_recursivo(nodo.derecha, nodo.valor)
+            nodo.estudiante = self._encontrar_minimo(nodo.derecha).estudiante
+            nodo.derecha = self._eliminar_recursivo(nodo.derecha, nodo.estudiante.id)
 
         return nodo
 
@@ -58,17 +64,28 @@ class ArbolBusqueda:
             nodo = nodo.izquierda
         return nodo
 
-    def buscar(self, valor):
-        return self._buscar_recursivo(self.raiz, valor)
+    def buscar(self, id):
+        return self._buscar_recursivo(self.raiz, id)
 
-    def _buscar_recursivo(self, nodo, valor):
+    def _buscar_recursivo(self, nodo, id):
         if nodo is None:
-            return False
-        if nodo.valor == valor:
-            return True
-        if valor < nodo.valor:
-            return self._buscar_recursivo(nodo.izquierda, valor)
-        return self._buscar_recursivo(nodo.derecha, valor)
+            return None
+        if nodo.estudiante.id == id:
+            return nodo.estudiante
+        if id < nodo.estudiante.id:
+            return self._buscar_recursivo(nodo.izquierda, id)
+        return self._buscar_recursivo(nodo.derecha, id)
+
+    def listar_estudiantes(self):
+        estudiantes = []
+        self._inorden(self.raiz, estudiantes)
+        return estudiantes
+
+    def _inorden(self, nodo, estudiantes):
+        if nodo:
+            self._inorden(nodo.izquierda, estudiantes)
+            estudiantes.append(nodo.estudiante)
+            self._inorden(nodo.derecha, estudiantes)
 
     def obtener_info(self):
         info = {
@@ -121,23 +138,39 @@ class MainWindow(QMainWindow):
 
         self.arbol = ArbolBusqueda()
 
-        self.label = QLabel("Valor:")
+        self.label = QLabel("ID:")
         self.layout.addWidget(self.label)
 
         self.input_text = QLineEdit()
         self.layout.addWidget(self.input_text)
 
-        self.insertar_button = QPushButton("Insertar")
+        self.label_nombre = QLabel("Nombre:")
+        self.layout.addWidget(self.label_nombre)
+
+        self.input_nombre = QLineEdit()
+        self.layout.addWidget(self.input_nombre)
+
+        self.label_carrera = QLabel("Carrera:")
+        self.layout.addWidget(self.label_carrera)
+
+        self.input_carrera = QLineEdit()
+        self.layout.addWidget(self.input_carrera)
+
+        self.insertar_button = QPushButton("Agregar Estudiante")
         self.insertar_button.clicked.connect(self.insertar_valor)
         self.layout.addWidget(self.insertar_button)
 
-        self.eliminar_button = QPushButton("Eliminar")
+        self.eliminar_button = QPushButton("Eliminar Estudiante")
         self.eliminar_button.clicked.connect(self.eliminar_valor)
         self.layout.addWidget(self.eliminar_button)
 
-        self.buscar_button = QPushButton("Buscar")
+        self.buscar_button = QPushButton("Buscar Estudiante")
         self.buscar_button.clicked.connect(self.buscar_valor)
         self.layout.addWidget(self.buscar_button)
+
+        self.listar_button = QPushButton("Listar Estudiantes")
+        self.listar_button.clicked.connect(self.listar_estudiantes)
+        self.layout.addWidget(self.listar_button)
 
         self.info_text = QTextEdit()
         self.info_text.setReadOnly(True)
@@ -163,26 +196,44 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.cargar_button)
 
     def insertar_valor(self):
-        valor = self.input_text.text()
         try:
-            valor = int(valor)  # Convertir a entero
-            self.arbol.insertar(valor)
+            id = int(self.input_text.text())
+            nombre = self.input_nombre.text()
+            carrera = self.input_carrera.text()
+            estudiante = Estudiante(id, nombre, carrera)
+            self.arbol.insertar(estudiante)
             self.actualizar_info()
             self.actualizar_visualizacion()
         except ValueError:
-            self.info_text.append("Ingrese un valor entero válido.")
+            self.info_text.append("Ingrese un ID válido.")
 
     def eliminar_valor(self):
-        valor = int(self.input_text.text())
-        self.arbol.eliminar(valor)
-        self.actualizar_info()
-        self.actualizar_visualizacion()
+        try:
+            id = int(self.input_text.text())
+            self.arbol.eliminar(id)
+            self.actualizar_info()
+            self.actualizar_visualizacion()
+        except ValueError:
+            self.info_text.append("Ingrese un ID válido.")
 
     def buscar_valor(self):
-        valor = int(self.input_text.text())
-        encontrado = self.arbol.buscar(valor)
-        mensaje = f"El valor {valor} {'fue encontrado' if encontrado else 'no fue encontrado'} en el árbol."
-        self.info_text.append(mensaje)
+        try:
+            id = int(self.input_text.text())
+            estudiante = self.arbol.buscar(id)
+            if estudiante:
+                mensaje = f"Estudiante encontrado - ID: {estudiante.id}, Nombre: {estudiante.nombre}, Carrera: {estudiante.carrera}"
+            else:
+                mensaje = f"Estudiante con ID {id} no encontrado."
+            self.info_text.append(mensaje)
+        except ValueError:
+            self.info_text.append("Ingrese un ID válido.")
+
+    def listar_estudiantes(self):
+        estudiantes = self.arbol.listar_estudiantes()
+        self.info_text.clear()
+        for est in estudiantes:
+            self.info_text.append(f"ID: {est.id}, Nombre: {est.nombre}, Carrera: {est.carrera}")
+        self.guardar_lista_estudiantes(estudiantes)
 
     def actualizar_info(self):
         info = self.arbol.obtener_info()
@@ -195,7 +246,7 @@ class MainWindow(QMainWindow):
 
     def guardar_arbol(self, nodo, file):
         if nodo:
-            file.write(str(nodo.valor) + "\n")
+            file.write(f"{nodo.estudiante.id},{nodo.estudiante.nombre},{nodo.estudiante.carrera}\n")
             self.guardar_arbol(nodo.izquierda, file)
             self.guardar_arbol(nodo.derecha, file)
         else:
@@ -218,31 +269,27 @@ class MainWindow(QMainWindow):
                 self.actualizar_visualizacion()
 
     def cargar_arbol(self, file):
-        # Leer la primera línea del archivo
         linea = file.readline().strip()
-
-        # Ignorar la línea "Árbol Binario:"
         if linea == "Árbol Binario:":
             linea = file.readline().strip()
-
-        # Comenzar la carga del árbol
         return self.cargar_nodo(linea, file)
 
     def cargar_nodo(self, linea, file):
-        # Si la línea es "None", el nodo es nulo
         if linea == "None":
             return None
-
-        # Crear un nodo con el valor de la línea
-        nodo = Nodo(int(linea))
-
-        # Cargar el hijo izquierdo recursivamente
+        datos = linea.split(',')
+        estudiante = Estudiante(int(datos[0]), datos[1], datos[2])
+        nodo = Nodo(estudiante)
         nodo.izquierda = self.cargar_nodo(file.readline().strip(), file)
-
-        # Cargar el hijo derecho recursivamente
         nodo.derecha = self.cargar_nodo(file.readline().strip(), file)
-
         return nodo
+
+    def guardar_lista_estudiantes(self, estudiantes):
+        filename, _ = QFileDialog.getSaveFileName(self, "Guardar Lista", "", "Archivos de Texto (*.txt)")
+        if filename:
+            with open(filename, 'w') as file:
+                for est in estudiantes:
+                    file.write(f"ID: {est.id}, Nombre: {est.nombre}, Carrera: {est.carrera}\n")
 
 class VisualizacionWidget(QWidget):
     def __init__(self):
@@ -262,7 +309,7 @@ class VisualizacionWidget(QWidget):
 
     def dibujar_arbol(self, painter, nodo, x, y, nivel):
         if nodo:
-            painter.drawText(x - 15, y + 15, str(nodo.valor))
+            painter.drawText(x - 15, y + 15, str(nodo.estudiante.id))
 
             separacion_horizontal = 80
             separacion_vertical = 50
